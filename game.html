@@ -1,11 +1,17 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的网页怀旧游戏厅</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             background-color: #121212;
             color: #ffffff;
@@ -25,7 +31,11 @@
             transition: margin-left 0.3s ease;
             z-index: 100;
         }
-        #sidebar.collapsed { margin-left: -280px; }
+
+        #sidebar.collapsed {
+            margin-left: -280px;
+        }
+
         .sidebar-header {
             padding: 15px;
             background: #252526;
@@ -34,8 +44,17 @@
             justify-content: space-between;
             align-items: center;
         }
-        .sidebar-header h2 { font-size: 1.1rem; color: #4facfe; }
-        .search-box { padding: 10px 15px; border-bottom: 1px solid #333; }
+
+        .sidebar-header h2 {
+            font-size: 1.1rem;
+            color: #4facfe;
+        }
+
+        .search-box {
+            padding: 10px 15px;
+            border-bottom: 1px solid #333;
+        }
+
         .search-box input {
             width: 100%;
             padding: 8px 12px;
@@ -45,10 +64,18 @@
             border-radius: 4px;
             outline: none;
         }
-        .search-box input:focus { border-color: #4facfe; }
+
+        .search-box input:focus {
+            border-color: #4facfe;
+        }
 
         /* 游戏列表容器 */
-        .game-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .game-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
         .game-item {
             padding: 10px 12px;
             margin-bottom: 6px;
@@ -60,8 +87,16 @@
             align-items: center;
             transition: background 0.2s;
         }
-        .game-item:hover { background: #3a3a3a; }
-        .game-item.active { background: #005fb8; color: #fff; }
+
+        .game-item:hover {
+            background: #3a3a3a;
+        }
+
+        .game-item.active {
+            background: #005fb8;
+            color: #fff;
+        }
+
         .game-title {
             font-size: 0.9rem;
             white-space: nowrap;
@@ -69,6 +104,7 @@
             text-overflow: ellipsis;
             max-width: 180px;
         }
+
         .game-tag {
             font-size: 0.7rem;
             background: #444;
@@ -85,6 +121,7 @@
             position: relative;
             background: #000;
         }
+
         .top-bar {
             height: 48px;
             background: #1e1e1e;
@@ -94,6 +131,7 @@
             padding: 0 15px;
             gap: 15px;
         }
+
         .toggle-btn {
             background: #2a2a2a;
             color: #fff;
@@ -103,9 +141,23 @@
             cursor: pointer;
             font-size: 0.9rem;
         }
-        .toggle-btn:hover { background: #4facfe; color: #000; }
-        #current-game-title { font-size: 1rem; color: #aaa; }
-        #game-frame { width: 100%; height: calc(100vh - 48px); border: none; }
+
+        .toggle-btn:hover {
+            background: #4facfe;
+            color: #000;
+        }
+
+        #current-game-title {
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        #game-frame {
+            width: 100%;
+            height: calc(100vh - 48px);
+            border: none;
+        }
+
         .no-game-tip {
             position: absolute;
             top: 50%;
@@ -117,6 +169,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <!-- 侧边栏 -->
@@ -145,7 +198,7 @@
     <script>
         // 【注意】请务必将这两行修改为你真实的 GitHub 用户名和仓库名！
         const GITHUB_USER = 'Dawn';           // 你的 GitHub 用户名
-        const GITHUB_REPO = 'game';           // 你的仓库名称
+        const GITHUB_REPO = 'Game';           // 你的仓库名称
 
         // 要检索的目录相对路径列表
         const TARGET_FOLDERS = [
@@ -177,7 +230,7 @@
                 try {
                     // 1. 优先请求 GitHub API 获取该目录下的文件列表
                     let response = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderPath}`);
-                    
+
                     if (response.ok) {
                         const files = await response.json();
                         files.forEach(f => {
@@ -226,7 +279,7 @@
             const ext = fileName.split('.').pop().toLowerCase();
             const core = CORE_MAP[ext] || 'nes';
             const title = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
-            
+
             return {
                 title: title,
                 path: filePath,
@@ -261,7 +314,7 @@
         // 启动游戏
         function playGame(romPath, coreType, title, element) {
             document.querySelectorAll('.game-item').forEach(el => el.classList.remove('active'));
-            if(element) element.classList.add('active');
+            if (element) element.classList.add('active');
 
             document.getElementById('empty-tip').style.display = 'none';
             document.getElementById('current-game-title').innerText = `正在游玩: ${title}`;
@@ -296,4 +349,5 @@
         window.onload = autoScanRoms;
     </script>
 </body>
+
 </html>
