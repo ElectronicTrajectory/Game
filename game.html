@@ -197,16 +197,13 @@
 
     <script>
         // 【注意】请务必将这两行修改为你真实的 GitHub 用户名和仓库名！
-        const GITHUB_USER = 'ElectronicTrajectory';           // 你的 GitHub 用户名
-        const GITHUB_REPO = 'Game';           // 你的仓库名称
-        const GITHUB_TOKEN = 'YOUR_GITHUB_TOKEN_HERE';  // 请替换为你的真实 token
-        // 要检索的目录相对路径列表
+        const GITHUB_USER = 'ElectronicTrajectory';
+        const GITHUB_REPO = 'Game';
         const TARGET_FOLDERS = [
             'NES/roms',
             'GBA/roms'
         ];
 
-        // 对应文件的核心配置
         const CORE_MAP = {
             'nes': 'nes',
             'gba': 'gba',
@@ -216,43 +213,27 @@
 
         let allGames = [];
 
-        // 展开/收起侧边栏
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('collapsed');
         }
 
-        // 纯网页 JS 扫描多平台目录
         async function autoScanRoms() {
             const container = document.getElementById('game-list-container');
             allGames = [];
 
             for (const folderPath of TARGET_FOLDERS) {
                 try {
-                    // 1. 优先请求 GitHub API 获取该目录下的文件列表
-                    // let response = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderPath}`);
-                    let response = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderPath}`, {
-                        headers: {
-                            'Authorization': `token ${GITHUB_TOKEN}`
-                        }
-                    });
-                    if (response.ok) {
-                        const files = await response.json();
+                    const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderPath}`;
+                    const resp = await fetch(url);
+                    if (resp.ok) {
+                        const files = await resp.json();
                         files.forEach(f => {
                             if (f.type === 'file' && isRomFile(f.name)) {
-                                allGames.push(parseGameObj(f.name, f.path));
+                                allGames.push(parseGameObj(f.name, f.download_url));
                             }
                         });
                     } else {
-                        // 2. 本地 Live Server 环境备用解析
-                        let localResp = await fetch(`${folderPath}/`);
-                        if (localResp.ok) {
-                            const htmlText = await localResp.text();
-                            const links = [...htmlText.matchAll(/href="([^"]+\.(nes|gba|gbc|gb))"/gi)];
-                            links.forEach(m => {
-                                const fileName = decodeURIComponent(m[1].split('/').pop());
-                                allGames.push(parseGameObj(fileName, `${folderPath}/${fileName}`));
-                            });
-                        }
+                        console.warn(`GitHub API 返回 ${resp.status}: ${folderPath}`);
                     }
                 } catch (err) {
                     console.warn(`扫描目录 ${folderPath} 异常:`, err);
@@ -263,8 +244,9 @@
                 container.innerHTML = `
                     <div style="padding:15px; color:#ffaaaa; font-size:0.85rem;">
                         未检测到游戏，请确保：<br>
-                        1. 已将代码第 120-121 行修改为你的实际 GitHub 用户名和仓库名。<br>
-                        2. 确认仓库下存在 NES/roms 和 GBA/roms 路径及游戏文件。
+                        1. 已将代码第 199-200 行修改为你的实际 GitHub 用户名和仓库名。<br>
+                        2. 确认仓库下存在 NES/roms 和 GBA/roms 路径及游戏文件。<br>
+                        3. 仓库必须为<strong>公开</strong>仓库。
                     </div>`;
                 return;
             }
