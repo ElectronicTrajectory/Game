@@ -50,22 +50,37 @@
             color: #4facfe;
         }
 
-        .search-box {
+        .filter-box {
             padding: 10px 15px;
             border-bottom: 1px solid #333;
+            display: flex;
+            gap: 8px;
         }
 
-        .search-box input {
-            width: 100%;
-            padding: 8px 12px;
+        .filter-box select,
+        .filter-box input {
+            padding: 8px 10px;
             background: #2a2a2a;
             border: 1px solid #444;
             color: #fff;
             border-radius: 4px;
             outline: none;
+            font-size: 0.85rem;
         }
 
-        .search-box input:focus {
+        .filter-box select {
+            flex: 0 0 auto;
+            min-width: 70px;
+            cursor: pointer;
+        }
+
+        .filter-box input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .filter-box select:focus,
+        .filter-box input:focus {
             border-color: #4facfe;
         }
 
@@ -177,8 +192,11 @@
         <div class="sidebar-header">
             <h2>🎮 游戏目录</h2>
         </div>
-        <div class="search-box">
-            <input type="text" id="search-input" placeholder="搜索游戏..." oninput="filterGames()">
+        <div class="filter-box">
+            <select id="platform-select" onchange="filterGames()">
+                <option value="">全部平台</option>
+            </select>
+            <input type="text" id="search-input" placeholder="搜索游戏名称..." oninput="filterGames()">
         </div>
         <div class="game-list" id="game-list-container">
             <div style="padding:15px; color:#888;">正在扫描 NES / GBA 目录...</div>
@@ -265,9 +283,9 @@
             }
 
             renderGameList(allGames);
+            updatePlatformOptions();
         }
 
-        // 判断文件是否为支持的 ROM 格式
         function isRomFile(fileName) {
             const ext = fileName.split('.').pop().toLowerCase();
             return !!CORE_MAP[ext];
@@ -306,8 +324,25 @@
         // 检索筛选
         function filterGames() {
             const keyword = document.getElementById('search-input').value.toLowerCase();
-            const filtered = allGames.filter(g => g.title.toLowerCase().includes(keyword));
+            const platform = document.getElementById('platform-select').value;
+            let filtered = allGames;
+            if (platform) {
+                filtered = filtered.filter(g => g.type === platform);
+            }
+            if (keyword) {
+                filtered = filtered.filter(g => g.title.toLowerCase().includes(keyword));
+            }
             renderGameList(filtered);
+        }
+
+        function updatePlatformOptions() {
+            const select = document.getElementById('platform-select');
+            const platforms = ['全部平台', ...new Set(allGames.map(g => g.type).sort())];
+            select.innerHTML = platforms.map(p => {
+                const value = p === '全部平台' ? '' : p;
+                const label = p === '全部平台' ? '全部平台 (' + allGames.length + '个)' : p + ' (' + allGames.filter(g => g.type === p).length + '个)';
+                return `<option value="${value}">${label}</option>`;
+            }).join('');
         }
 
         // 启动游戏
