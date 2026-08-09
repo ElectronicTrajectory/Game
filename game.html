@@ -199,7 +199,7 @@
         // 【注意】请务必将这两行修改为你真实的 GitHub 用户名和仓库名！
         const GITHUB_USER = 'ElectronicTrajectory';           // 你的 GitHub 用户名
         const GITHUB_REPO = 'Game';           // 你的仓库名称
-
+        const GITHUB_TOKEN = 'YOUR_GITHUB_TOKEN_HERE';  // 请替换为你的真实 token
         // 要检索的目录相对路径列表
         const TARGET_FOLDERS = [
             'NES/roms',
@@ -229,8 +229,12 @@
             for (const folderPath of TARGET_FOLDERS) {
                 try {
                     // 1. 优先请求 GitHub API 获取该目录下的文件列表
-                    let response = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderPath}`);
-
+                    // let response = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderPath}`);
+                    let response = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderPath}`, {
+                        headers: {
+                            'Authorization': `token ${GITHUB_TOKEN}`
+                        }
+                    });
                     if (response.ok) {
                         const files = await response.json();
                         files.forEach(f => {
