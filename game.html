@@ -201,14 +201,27 @@
         const GITHUB_REPO = 'Game';
         const TARGET_FOLDERS = [
             'NES/roms',
-            'GBA/roms'
+            'GBA/roms',
+            'GBC/roms',
+            'GB/roms',
+            'SFC/roms',
+            'NDS/roms',
+            'MD/roms',
+            'N64/roms',
+            'Arcade/roms',
         ];
 
         const CORE_MAP = {
             'nes': 'nes',
             'gba': 'gba',
-            'gbc': 'gbc',
-            'gb': 'gb'
+            'gbc': 'gbc',       // GBC 游戏
+            'gb': 'gb',        // GB 游戏
+            'sfc': 'snes',      // SFC 游戏
+            'smc': 'snes',      // SFC 游戏
+            'nds': 'nds',       // NDS 游戏
+            'md': 'segaMD',    // 世嘉 MD 游戏
+            'z64': 'n64',        // N64 游戏
+            'zip': 'fba',       //街机游戏
         };
 
         let allGames = [];
@@ -321,7 +334,7 @@
                         window.EJS_player = '#game';
                         window.EJS_gameUrl = '${romPath}';
                         window.EJS_core = '${coreType}';
-                        window.EJS_language = 'en-US';
+                        window.EJS_language = 'zh-CN';
                         window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
                     <\/script>
                     <script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script>
