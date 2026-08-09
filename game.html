@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的网页怀旧游戏厅</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 侧边栏样式 */
+        #sidebar {
+            width: 280px;
+            background-color: #1e1e1e;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.3s ease;
+            z-index: 100;
+        }
+        #sidebar.collapsed { margin-left: -280px; }
+        .sidebar-header {
+            padding: 15px;
+            background: #252526;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sidebar-header h2 { font-size: 1.1rem; color: #4facfe; }
+        .search-box { padding: 10px 15px; border-bottom: 1px solid #333; }
+        .search-box input {
+            width: 100%;
+            padding: 8px 12px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
+            outline: none;
+        }
+        .search-box input:focus { border-color: #4facfe; }
+
+        /* 游戏列表容器 */
+        .game-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .game-item {
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            background: #2a2a2a;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .game-item:hover { background: #3a3a3a; }
+        .game-item.active { background: #005fb8; color: #fff; }
+        .game-title {
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
+        .game-tag {
+            font-size: 0.7rem;
+            background: #444;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #bbb;
+        }
+
+        /* 主界面样式 */
+        #main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: #000;
+        }
+        .top-bar {
+            height: 48px;
+            background: #1e1e1e;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            gap: 15px;
+        }
+        .toggle-btn {
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .toggle-btn:hover { background: #4facfe; color: #000; }
+        #current-game-title { font-size: 1rem; color: #aaa; }
+        #game-frame { width: 100%; height: calc(100vh - 48px); border: none; }
+        .no-game-tip {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            font-size: 1.2rem;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 侧边栏 -->
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <h2>🎮 游戏目录</h2>
+        </div>
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="搜索游戏..." oninput="filterGames()">
+        </div>
+        <div class="game-list" id="game-list-container">
+            <div style="padding:15px; color:#888;">正在扫描 NES / GBA 目录...</div>
+        </div>
+    </div>
+
+    <!-- 主界面 -->
+    <div id="main-content">
+        <div class="top-bar">
+            <button class="toggle-btn" onclick="toggleSidebar()">☰ 目录</button>
+            <span id="current-game-title">请选择游戏</span>
+        </div>
+        <div class="no-game-tip" id="empty-tip">请点击左侧菜单加载游戏</div>
+        <iframe id="game-frame" src="about:blank"></iframe>
+    </div>
+
+    <script>
+        // 【注意】请务必将这两行修改为你真实的 GitHub 用户名和仓库名！
+        const GITHUB_USER = 'Dawn';           // 你的 GitHub 用户名
+        const GITHUB_REPO = 'game';           // 你的仓库名称
+
+        // 要检索的目录相对路径列表
+        const TARGET_FOLDERS = [
+            'NES/roms',
+            'GBA/roms'
+        ];
+
+        // 对应文件的核心配置
+        const CORE_MAP = {
+            'nes': 'nes',
+            'gba': 'gba',
+            'gbc': 'gbc',
+            'gb': 'gb'
+        };
+
+        let allGames = [];
+
+        // 展开/收起侧边栏
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+
+        // 纯网页 JS 扫描多平台目录
+        async function autoScanRoms() {
+            const container = document.getElementById('game-list-container');
+            allGames = [];
+
+            for (const folderPath of TARGET_FOLDERS) {
+                try {
+                    // 1. 优先请求 GitHub API 获取该目录下的文件列表
+                    let response = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderPath}`);
+                    
+                    if (response.ok) {
+                        const files = await response.json();
+                        files.forEach(f => {
+                            if (f.type === 'file' && isRomFile(f.name)) {
+                                allGames.push(parseGameObj(f.name, f.path));
+                            }
+                        });
+                    } else {
+                        // 2. 本地 Live Server 环境备用解析
+                        let localResp = await fetch(`${folderPath}/`);
+                        if (localResp.ok) {
+                            const htmlText = await localResp.text();
+                            const links = [...htmlText.matchAll(/href="([^"]+\.(nes|gba|gbc|gb))"/gi)];
+                            links.forEach(m => {
+                                const fileName = decodeURIComponent(m[1].split('/').pop());
+                                allGames.push(parseGameObj(fileName, `${folderPath}/${fileName}`));
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.warn(`扫描目录 ${folderPath} 异常:`, err);
+                }
+            }
+
+            if (allGames.length === 0) {
+                container.innerHTML = `
+                    <div style="padding:15px; color:#ffaaaa; font-size:0.85rem;">
+                        未检测到游戏，请确保：<br>
+                        1. 已将代码第 120-121 行修改为你的实际 GitHub 用户名和仓库名。<br>
+                        2. 确认仓库下存在 NES/roms 和 GBA/roms 路径及游戏文件。
+                    </div>`;
+                return;
+            }
+
+            renderGameList(allGames);
+        }
+
+        // 判断文件是否为支持的 ROM 格式
+        function isRomFile(fileName) {
+            const ext = fileName.split('.').pop().toLowerCase();
+            return !!CORE_MAP[ext];
+        }
+
+        // 构建游戏对象信息
+        function parseGameObj(fileName, filePath) {
+            const ext = fileName.split('.').pop().toLowerCase();
+            const core = CORE_MAP[ext] || 'nes';
+            const title = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
+            
+            return {
+                title: title,
+                path: filePath,
+                core: core,
+                type: core.toUpperCase()
+            };
+        }
+
+        // 渲染侧边栏列表
+        function renderGameList(games) {
+            const container = document.getElementById('game-list-container');
+            if (games.length === 0) {
+                container.innerHTML = '<div style="padding:15px; color:#888;">未匹配到游戏</div>';
+                return;
+            }
+
+            container.innerHTML = games.map(game => `
+                <div class="game-item" onclick="playGame('${game.path}', '${game.core}', '${game.title}', this)">
+                    <span class="game-title" title="${game.title}">${game.title}</span>
+                    <span class="game-tag">${game.type}</span>
+                </div>
+            `).join('');
+        }
+
+        // 检索筛选
+        function filterGames() {
+            const keyword = document.getElementById('search-input').value.toLowerCase();
+            const filtered = allGames.filter(g => g.title.toLowerCase().includes(keyword));
+            renderGameList(filtered);
+        }
+
+        // 启动游戏
+        function playGame(romPath, coreType, title, element) {
+            document.querySelectorAll('.game-item').forEach(el => el.classList.remove('active'));
+            if(element) element.classList.add('active');
+
+            document.getElementById('empty-tip').style.display = 'none';
+            document.getElementById('current-game-title').innerText = `正在游玩: ${title}`;
+
+            const frame = document.getElementById('game-frame');
+            const iframeContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        html, body { margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; }
+                        #game { width:100%; height:100%; }
+                    </style>
+                </head>
+                <body>
+                    <div id="game"></div>
+                    <script>
+                        window.EJS_player = '#game';
+                        window.EJS_gameUrl = '${romPath}';
+                        window.EJS_core = '${coreType}';
+                        window.EJS_language = 'en-US';
+                        window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+                    <\/script>
+                    <script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script>
+                </body>
+                </html>
+            `;
+            frame.srcdoc = iframeContent;
+        }
+
+        // 页面初始化时扫码加载
+        window.onload = autoScanRoms;
+    </script>
+</body>
+</html>
